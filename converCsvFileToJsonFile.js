@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
-const { createInterface } = require('readline');
+const { Transform } = require('stream');
+
 const fs = require('fs');
 const path = require('path');
 const convertCsvRowToJson = require('./convertCsvRowToJson');
@@ -7,51 +8,70 @@ const convertCsvRowToJson = require('./convertCsvRowToJson');
 const csvFile = path.join(__dirname, 'test.csv');
 const jsonFile = path.join(__dirname, 'test.json');
 
-function errHandler(err) {
-    if (err) throw err;
-}
+class toJson extends Transform {
+    constructor(csv = false) {
+        super();
+        this.csv = csv;
+        this.headerLine = true;
+        this.firstLine = true;
+        this.unprocessedChankLine = null;
+    }
 
-function saveLineToFile(jsonFilePath) {
-    fs.writeFile(jsonFilePath, '', errHandler);
-    let prevLine;
-    fs.appendFile(jsonFilePath, '[', errHandler);
-
-    return (line, lastLine = false) => {
-        if (lastLine) {
-            fs.appendFile(jsonFilePath, `${prevLine}${line}`, errHandler);
-            prevLine = null;
-        } else if (prevLine && !lastLine) {
-            fs.appendFile(jsonFilePath, `${prevLine},`, errHandler);
-            prevLine = line;
-        } else {
-            prevLine = line;
+    _transform(chunk, enc, done) {
+        if (this.csv) {
+            console.log('processing csv');
         }
-    };
+
+        let chunkLine;
+        if (this.unprocessedChankLine) {
+            chunkLine = this.unprocessedChankLine + chunk.toString('utf8');
+        } else {
+            chunkLine = chunk.toString('utf8');
+        }
+
+        if (chunkLine.endsWith('\r')) {
+            this.unprocessedChankLine = null;
+        } else {
+            const startIndexCropRow = chunkLine.lastIndexOf('\r');
+            this.unprocessedChankLine = chunkLine.substring(startIndexCropRow + 1);
+            chunkLine = chunkLine.substring(0, startIndexCropRow);
+        }
+
+        chunkLine.split('\r')
+            .forEach((line) => {
+                if (this.headerLine) {
+                    convertCsvRowToJson.setHeader(line);
+                    this.push('[');
+                    this.headerLine = false;
+                } else {
+                    const jsonLine = `${this.firstLine ? '' : ','}${convertCsvRowToJson.getJson(line)}`;
+                    this.push(jsonLine);
+
+                    // eslint-disable-next-line no-undef
+                    if (this.firstLine === true) { this.firstLine = false; }
+                }
+            });
+        done();
+    }
+
+    _flush(done) {
+        if (this.unprocessedChankLine) {
+            const jsonLine = `${this.firstLine ? '' : ','}${convertCsvRowToJson.getJson(this.unprocessedChankLine)}`;
+            this.push(jsonLine);
+        }
+        this.push(']');
+        done();
+    }
 }
 
 function processLineByLine() {
     try {
-        const saveJsonRow = saveLineToFile(jsonFile);
-        const fileStream = fs.createReadStream(csvFile);
-        const rl = createInterface({
-            input: fileStream,
-            crlfDelay: Infinity
-        });
+        const readeStream = fs.createReadStream(csvFile);
+        const writeStream = fs.createWriteStream(jsonFile);
 
-        let firstLine = true;
-
-        rl.on('line', (line) => {
-            if (firstLine) {
-                convertCsvRowToJson.setHeader(line);
-                firstLine = false;
-            } else {
-                saveJsonRow(convertCsvRowToJson.getJson(line));
-            }
-        });
-        rl.on('close', () => {
-            saveJsonRow(']', true);
-            console.log('File end.');
-        });
+        // eslint-disable-next-line new-cap
+        readeStream.pipe(new toJson(true))
+            .pipe(writeStream);
     } catch (err) {
         console.error(err);
     }
