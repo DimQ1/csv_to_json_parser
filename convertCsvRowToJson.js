@@ -1,11 +1,15 @@
+const detectSeparator = require('./detectSeparator');
+
 let headers = [];
 
 module.exports = {
-    setHeader: (csvHeader) => {
-        headers = csvHeader ? csvHeader.split(',') : [];
+    setHeader: (csvHeader, separator = null) => {
+        const detectedSeparator = separator || detectSeparator(csvHeader);
+        headers = csvHeader ? csvHeader.split(detectedSeparator) : [];
     },
-    getJson: (csvRow) => {
-        const columns = csvRow.split(',');
+    getJson: (csvRow, separator = null) => {
+        const detectedSeparator = separator || detectSeparator(csvRow);
+        const columns = csvRow.split(detectedSeparator);
         const objectRow = {};
 
         if (headers.length === columns.length) {

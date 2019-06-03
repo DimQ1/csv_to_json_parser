@@ -8,19 +8,16 @@ const convertCsvRowToJson = require('./convertCsvRowToJson');
 const csvFile = path.join(__dirname, 'test.csv');
 const jsonFile = path.join(__dirname, 'test.json');
 
-class toJson extends Transform {
-    constructor(csv = false) {
+class TransformToJson extends Transform {
+    constructor(separator) {
         super();
-        this.csv = csv;
+        this.separator = separator;
         this.headerLine = true;
         this.firstLine = true;
         this.unprocessedChankLine = null;
     }
 
     _transform(chunk, enc, done) {
-        if (this.csv) {
-            console.log('processing csv');
-        }
 
         let chunkLine;
         if (this.unprocessedChankLine) {
@@ -40,11 +37,11 @@ class toJson extends Transform {
         chunkLine.split('\r')
             .forEach((line) => {
                 if (this.headerLine) {
-                    convertCsvRowToJson.setHeader(line);
+                    convertCsvRowToJson.setHeader(line, this.separator);
                     this.push('[');
                     this.headerLine = false;
                 } else {
-                    const jsonLine = `${this.firstLine ? '' : ','}${convertCsvRowToJson.getJson(line)}`;
+                    const jsonLine = `${this.firstLine ? '' : ','}${convertCsvRowToJson.getJson(line, this.separator)}`;
                     this.push(jsonLine);
 
                     // eslint-disable-next-line no-undef
@@ -64,13 +61,12 @@ class toJson extends Transform {
     }
 }
 
-function processLineByLine() {
+function processLineByLine(csvFileFullPath, jsonFileFullPath, separator = null) {
     try {
-        const readeStream = fs.createReadStream(csvFile);
-        const writeStream = fs.createWriteStream(jsonFile);
+        const readeStream = fs.createReadStream(csvFileFullPath || csvFile);
+        const writeStream = fs.createWriteStream(jsonFileFullPath || jsonFile);
 
-        // eslint-disable-next-line new-cap
-        readeStream.pipe(new toJson(true))
+        readeStream.pipe(new TransformToJson(separator))
             .pipe(writeStream);
     } catch (err) {
         console.error(err);
