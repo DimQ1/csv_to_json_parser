@@ -4,7 +4,8 @@
   "description": "## Short Description",
   "main": "parseCSVRowToJson.js",
   "dependencies": {
-    "events": "^3.0.0"
+    "events": "^3.0.0",
+    "googleapis": "^39.2.0"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
