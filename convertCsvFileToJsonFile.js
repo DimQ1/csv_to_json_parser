@@ -2,13 +2,9 @@
 const { Transform } = require('stream');
 
 const fs = require('fs');
-const path = require('path');
-const convertCsvRowToJson = require('./convertCsvRowToJson');
+const converterCsvRowToJson = require('./converterCsvRowToJson');
 
-const csvFile = path.join(__dirname, 'test.csv');
-const jsonFile = path.join(__dirname, 'test.json');
-
-class TransformToJson extends Transform {
+class TransformCsvToJson extends Transform {
     constructor(separator) {
         super();
         this.separator = separator;
@@ -18,7 +14,6 @@ class TransformToJson extends Transform {
     }
 
     _transform(chunk, enc, done) {
-
         let chunkLine;
         if (this.unprocessedChankLine) {
             chunkLine = this.unprocessedChankLine + chunk.toString('utf8');
@@ -37,11 +32,11 @@ class TransformToJson extends Transform {
         chunkLine.split('\r')
             .forEach((line) => {
                 if (this.headerLine) {
-                    convertCsvRowToJson.setHeader(line, this.separator);
+                    converterCsvRowToJson.setHeader(line, this.separator);
                     this.push('[');
                     this.headerLine = false;
                 } else {
-                    const jsonLine = `${this.firstLine ? '' : ','}${convertCsvRowToJson.getJson(line, this.separator)}`;
+                    const jsonLine = `${this.firstLine ? '' : ','}${converterCsvRowToJson.getJsonString(line, this.separator)}`;
                     this.push(jsonLine);
 
                     // eslint-disable-next-line no-undef
@@ -53,7 +48,7 @@ class TransformToJson extends Transform {
 
     _flush(done) {
         if (this.unprocessedChankLine) {
-            const jsonLine = `${this.firstLine ? '' : ','}${convertCsvRowToJson.getJson(this.unprocessedChankLine)}`;
+            const jsonLine = `${this.firstLine ? '' : ','}${converterCsvRowToJson.getJsonString(this.unprocessedChankLine, this.separator)}`;
             this.push(jsonLine);
         }
         this.push(']');
@@ -61,16 +56,15 @@ class TransformToJson extends Transform {
     }
 }
 
-function processLineByLine(csvFileFullPath, jsonFileFullPath, separator = null) {
+module.exports = (csvFileFullPath, jsonFileFullPath, separator = null) => {
     try {
-        const readeStream = fs.createReadStream(csvFileFullPath || csvFile);
-        const writeStream = fs.createWriteStream(jsonFileFullPath || jsonFile);
+        const readeStream = fs.createReadStream(csvFileFullPath);
+        const writeStream = fs.createWriteStream(jsonFileFullPath);
 
-        readeStream.pipe(new TransformToJson(separator))
+        readeStream.pipe(new TransformCsvToJson(separator))
             .pipe(writeStream);
     } catch (err) {
         console.error(err);
+        throw err;
     }
-}
-
-processLineByLine();
+};

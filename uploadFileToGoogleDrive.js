@@ -52,7 +52,6 @@ function authorize(credentials) {
                 await getAccessToken(oAuth2Client);
                 resolve(oAuth2Client);
             } else {
-                // if (err) return getAccessToken(oAuth2Client, callback);
                 oAuth2Client.setCredentials(JSON.parse(token));
                 resolve(oAuth2Client);
             }
@@ -61,7 +60,7 @@ function authorize(credentials) {
 }
 
 // upload File
-function uploadFile(auth, pathUploadingFile = 'files/test.txt') {
+function uploadFile(auth, pathUploadingFile) {
     const drive = google.drive({ version: 'v3', auth });
     const name = path.parse(pathUploadingFile).base;
     const fileMetadata = { name };

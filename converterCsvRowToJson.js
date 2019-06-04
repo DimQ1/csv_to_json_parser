@@ -7,7 +7,7 @@ module.exports = {
         const detectedSeparator = separator || detectSeparator(csvHeader);
         headers = csvHeader ? csvHeader.split(detectedSeparator) : [];
     },
-    getJson: (csvRow, separator = null) => {
+    getJsonString: (csvRow, separator = null) => {
         const detectedSeparator = separator || detectSeparator(csvRow);
         const columns = csvRow.split(detectedSeparator);
         const objectRow = {};
