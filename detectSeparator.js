@@ -18,7 +18,7 @@ module.exports = (line) => {
             separator = key;
         }
     }
-    if (separator === undefined || separator === null || separator === '') throw new Error("a delimiter isn't detect");
+    if (separator === undefined || separator === null || separator === '') throw new Error(`a delimiter isn't detect in line ${line}`);
 
     return separator;
 };
