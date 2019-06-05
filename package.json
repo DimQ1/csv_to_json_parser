@@ -1,8 +1,8 @@
 {
   "name": "csv_to_json_parser",
-  "version": "1.0.0",
-  "description": "## Short Description",
-  "main": "parseCSVRowToJson.js",
+  "version": "1.0.1",
+  "description": "learning project a converter csv file to css by transform",
+  "main": "main.js",
   "dependencies": {
     "events": "^3.0.0",
     "googleapis": "^39.2.0"
