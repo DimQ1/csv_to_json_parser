@@ -4,7 +4,8 @@ const path = require('path');
 
 const TransformToBigCsv = require('./TransformToBigCsv');
 
-const csvFileFullPath = path.join(__dirname, 'test.csv');
+const parentPath = path.dirname(__dirname).split(path.sep).join(path.sep);
+const csvFileFullPath = path.join(parentPath, 'test.csv');
 const jsonFileFullPath = path.join(__dirname, 'testBig.csv');
 
 const minFileSizeInBytes = 10000000000;

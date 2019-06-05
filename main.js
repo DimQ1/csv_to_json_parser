@@ -16,8 +16,8 @@ const correctExampleParametrs = 'Plesure input correct parameters for example: '
             const jsonFilePath = process.argv[5];
             const separator = separatorArg > 1 ? process.argv[separatorArg + 1] : null;
             if ((separator ? separator.length : 0) > 1) throw new Error('the separator cannot consist of more than one symbol');
-            convertCsvFileToJsonFile(csvFilePath, jsonFilePath, separator || null);
-            await uploadFileToGoogleDrive(jsonFilePath);
+            await convertCsvFileToJsonFile(csvFilePath, jsonFilePath, separator || null);
+            // await uploadFileToGoogleDrive(jsonFilePath);
         } else {
             console.log(correctExampleParametrs);
         }

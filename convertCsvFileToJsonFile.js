@@ -14,9 +14,13 @@ module.exports = (csvFileFullPath, jsonFileFullPath, separator = null) => {
 
         console.log(`Start convert file ${csvFileFullPath}`);
 
-        readeStream.pipe(new TransformCsvToJson(separator))
-            .pipe(writeStream);
-        console.log(`File "${csvFileFullPath}" converted to "${jsonFileFullPath}"`);
+        return new Promise((resolve) => {
+            readeStream.pipe(new TransformCsvToJson(separator))
+                .pipe(writeStream.on('finish', () => {
+                    console.log(`File "${csvFileFullPath}" converted to "${jsonFileFullPath}"`);
+                    resolve();
+                }));
+        });
     } catch (err) {
         throw err;
     }

@@ -40,6 +40,7 @@ module.exports = class TransformCsvToJson extends Transform {
                     if (this.firstLine === true) { this.firstLine = false; }
                 }
             });
+        chunkLine = null;
         done();
     }
 
