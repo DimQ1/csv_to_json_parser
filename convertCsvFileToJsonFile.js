@@ -3,25 +3,25 @@ const fs = require('fs');
 const TransformCsvToJson = require('./TransformCsvToJson');
 
 module.exports = (csvFileFullPath, jsonFileFullPath, separator = null) => {
-    try {
-        if (!fs.existsSync(csvFileFullPath)) throw new Error(`csv file "${csvFileFullPath}" not exists`);
-        if (jsonFileFullPath === undefined || jsonFileFullPath.length === 0) {
-            throw new Error(`json file path "${jsonFileFullPath}" must consist of one symbol or more`);
-        }
+    if (!fs.existsSync(csvFileFullPath)) throw new Error(`csv file "${csvFileFullPath}" not exists`);
+    if (!jsonFileFullPath) throw new Error(`json file path "${jsonFileFullPath}" must consist of one symbol or more`);
+    const optionStream = { encoding: 'utf8' };
+    const readeStream = fs.createReadStream(csvFileFullPath, optionStream);
+    const writeStream = fs.createWriteStream(jsonFileFullPath, optionStream);
 
-        const readeStream = fs.createReadStream(csvFileFullPath);
-        const writeStream = fs.createWriteStream(jsonFileFullPath);
+    console.log(`Start convert file ${csvFileFullPath}`);
 
-        console.log(`Start convert file ${csvFileFullPath}`);
-
-        return new Promise((resolve) => {
-            readeStream.pipe(new TransformCsvToJson(separator))
-                .pipe(writeStream.on('finish', () => {
+    return new Promise((resolve, reject) => {
+        try {
+            readeStream
+                .pipe(new TransformCsvToJson(separator))
+                .pipe(writeStream)
+                .on('finish', () => {
                     console.log(`File "${csvFileFullPath}" converted to "${jsonFileFullPath}"`);
                     resolve();
-                }));
-        });
-    } catch (err) {
-        throw err;
-    }
+                });
+        } catch (err) {
+            reject(err);
+        }
+    });
 };

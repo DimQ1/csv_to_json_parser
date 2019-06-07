@@ -1,52 +1,40 @@
 const { Transform } = require('stream');
-const converterCsvRowToJson = require('./converterCsvRowToJson');
+const ConverterCsvRowToJson = require('./ConverterCsvRowToJson');
 
 module.exports = class TransformCsvToJson extends Transform {
     constructor(separator) {
         super();
-        this.separator = separator;
-        this.headerLine = true;
-        this.firstLine = true;
-        this.unprocessedChankLine = null;
+        this.isHeaderLine = true;
+        this.isFirstLine = true;
+        this.unprocessedChankLine = '';
+        this.ConverterCsvRowToJson = new ConverterCsvRowToJson(separator);
     }
 
-    _transform(chunk, enc, done) {
-        let chunkLine;
-        if (this.unprocessedChankLine) {
-            chunkLine = this.unprocessedChankLine + chunk.toString('utf8');
-        } else {
-            chunkLine = chunk.toString('utf8');
-        }
+    _transform(chunk, encoding, done) {
+        const unitedChunk = this.unprocessedChankLine + chunk;
+        const startIndexCropRow = unitedChunk.lastIndexOf('\r');
+        const processingLine = unitedChunk.endsWith('\r') ? unitedChunk : unitedChunk.substring(0, startIndexCropRow);
 
-        if (chunkLine.endsWith('\r')) {
-            this.unprocessedChankLine = null;
-        } else {
-            const startIndexCropRow = chunkLine.lastIndexOf('\r');
-            this.unprocessedChankLine = chunkLine.substring(startIndexCropRow + 1);
-            chunkLine = chunkLine.substring(0, startIndexCropRow);
-        }
+        this.unprocessedChankLine = unitedChunk.endsWith('\r') ? '' : unitedChunk.substring(startIndexCropRow + 1);
 
-        chunkLine.split('\r')
+        processingLine.split('\r')
             .forEach((line) => {
-                if (this.headerLine) {
-                    converterCsvRowToJson.setHeader(line, this.separator);
+                if (this.isHeaderLine) {
+                    this.ConverterCsvRowToJson.setHeader(line);
                     this.push('[');
-                    this.headerLine = false;
+                    this.isHeaderLine = false;
                 } else {
-                    const jsonLine = `${this.firstLine ? '' : ','}${converterCsvRowToJson.getJsonString(line, this.separator)}`;
+                    const jsonLine = `${this.isFirstLine ? '' : ','}${this.ConverterCsvRowToJson.getJsonString(line)}`;
                     this.push(jsonLine);
-
-                    // eslint-disable-next-line no-undef
-                    if (this.firstLine === true) { this.firstLine = false; }
+                    if (this.isFirstLine) { this.isFirstLine = false; }
                 }
             });
-        chunkLine = null;
         done();
     }
 
     _flush(done) {
         if (this.unprocessedChankLine) {
-            const jsonLine = `${this.firstLine ? '' : ','}${converterCsvRowToJson.getJsonString(this.unprocessedChankLine, this.separator)}`;
+            const jsonLine = `${this.isFirstLine ? '' : ','}${this.ConverterCsvRowToJson.getJsonString(this.unprocessedChankLine)}`;
             this.push(jsonLine);
         }
         this.push(']');

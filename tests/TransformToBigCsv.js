@@ -1,31 +1,22 @@
 const { Transform } = require('stream');
 
 module.exports = class TransformCsvToJson extends Transform {
-    constructor(isHeader, headerLine) {
+    constructor(isHeader, headerLine, transformedBytes = 0) {
         super();
-        this.transformedBytes = 0;
+        this.transformedBytes = transformedBytes;
         this.isHeader = isHeader;
         this.headerLine = headerLine;
         this.unprocessedChankLine = null;
     }
 
-    _transform(chunk, enc, done) {
-        let chunkLine;
-        if (this.unprocessedChankLine) {
-            chunkLine = this.unprocessedChankLine + chunk.toString('utf8');
-        } else {
-            chunkLine = chunk.toString('utf8');
-        }
-
-        if (chunkLine.endsWith('\r')) {
-            this.unprocessedChankLine = null;
-        } else {
-            const startIndexCropRow = chunkLine.lastIndexOf('\r');
-            this.unprocessedChankLine = chunkLine.substring(startIndexCropRow + 1);
-            chunkLine = chunkLine.substring(0, startIndexCropRow);
-        }
-        this.transformedBytes += chunkLine.length;
-        chunkLine.split('\r')
+    _transform(chunk, encoding, done) {
+        const unitedChunk = this.unprocessedChankLine + chunk;
+        const startIndexCropRow = unitedChunk.lastIndexOf('\r');
+        const processingLine = unitedChunk.endsWith('\r') ? unitedChunk : unitedChunk.substring(0, startIndexCropRow);
+        this.transformedBytes += this.isHeader
+            ? this.writableLength
+            : this.writableLength - Buffer.from(this.headerLine).length;
+        processingLine.split('\r')
             .forEach((line) => {
                 if (this.isHeader) {
                     this.push(`${line}\r`);
@@ -35,14 +26,17 @@ module.exports = class TransformCsvToJson extends Transform {
                     this.push(`${line}\r`);
                 }
             });
+
         done();
     }
 
     _flush(done) {
-        if (this.unprocessedChankLine) {
-            this.push(`${this.unprocessedChankLine}\r`);
-        }
+        if (this.unprocessedChankLine) this.push(`${this.unprocessedChankLine}\r`);
         done();
+    }
+
+    getTransformedBytesLength() {
+        return this.transformedBytes;
     }
 
     getHeader() {

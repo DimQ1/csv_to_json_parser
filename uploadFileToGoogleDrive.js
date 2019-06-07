@@ -28,8 +28,8 @@ function getAccessToken(oAuth2Client) {
 
                 oAuth2Client.setCredentials(token);
                 // Store the token to disk for later program executions
-                fs.writeFile(TOKEN_PATH, JSON.stringify(token), (writeTokenErr) => {
-                    if (writeTokenErr) reject(writeTokenErr);
+                fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+                    if (err) reject(err);
                     console.log('Token stored to', TOKEN_PATH);
                 });
                 resolve(oAuth2Client);
@@ -47,8 +47,8 @@ function authorize(credentials) {
 
     // Check if we have previously stored a token.
     return (new Promise((resolve, reject) => {
-        fs.readFile(TOKEN_PATH, async (writeTokenErr, token) => {
-            if (writeTokenErr) {
+        fs.readFile(TOKEN_PATH, async (err, token) => {
+            if (err) {
                 await getAccessToken(oAuth2Client);
                 resolve(oAuth2Client);
             } else {
@@ -73,10 +73,10 @@ function uploadFile(auth, pathUploadingFile) {
         resource: fileMetadata,
         media,
         fields: 'id'
-    }, (writeTokenErr, file) => {
-        if (writeTokenErr) {
+    }, (err) => {
+        if (err) {
             // Handle error
-            console.error(writeTokenErr);
+            console.error(err);
         } else {
             console.log('File successful has sent to google drive');
         }
@@ -86,10 +86,10 @@ function uploadFile(auth, pathUploadingFile) {
 module.exports = async (pathUploadingFile) => {
     console.log(`Start send file "${pathUploadingFile}" to googledrive`);
     const credentials = (new Promise((resolve, reject) => {
-        fs.readFile('credentials.json', (writeTokenErr, content) => {
-            if (writeTokenErr) {
-                console.log(`Error loading client secret file ${writeTokenErr}`);
-                reject(new Error(`Error loading client secret file ${writeTokenErr}`));
+        fs.readFile('credentials.json', (err, content) => {
+            if (err) {
+                console.log(`Error loading client secret file ${err}`);
+                reject(new Error(`Error loading client secret file ${err}`));
             }
             resolve(JSON.parse(content));
         });

@@ -4,33 +4,42 @@ const path = require('path');
 
 const TransformToBigCsv = require('./TransformToBigCsv');
 
-const parentPath = path.dirname(__dirname).split(path.sep).join(path.sep);
-const csvFileFullPath = path.join(parentPath, 'test.csv');
+const csvFileFullPath = path.join(__dirname, '..', 'test.csv');
 const jsonFileFullPath = path.join(__dirname, 'testBig.csv');
 
-const minFileSizeInBytes = 10000000000;
+const minFileSizeInBytes = 1000000000;
 
-const pipelineCsv = (readeStream, writeStream, transformToBigCsv) => new Promise((resolve) => {
-    readeStream.pipe(transformToBigCsv)
-        .pipe(writeStream.on('finish', resolve));
+const pipelineCsv = (readeStream, writeStream, transformToBigCsv) => new Promise((resolve, reject) => {
+    try {
+        readeStream
+            .pipe(transformToBigCsv)
+            .pipe(writeStream)
+            .on('finish', () => {
+                const transformedBytes = transformToBigCsv.getTransformedBytesLength();
+                if (transformedBytes < minFileSizeInBytes) {
+                    resolve(
+                        pipelineCsv(
+                            fs.createReadStream(readeStream.path),
+                            fs.createWriteStream(writeStream.path, { flags: 'a' }),
+                            new TransformToBigCsv(false, transformToBigCsv.getHeader(), transformedBytes)
+                        )
+                    );
+                } else {
+                    resolve(transformedBytes);
+                }
+            });
+    } catch (exception) {
+        reject(exception);
+    }
 });
 
 const loop = async () => {
-    let transformedBytes = 0;
-    let transformToBigCsv = new TransformToBigCsv(true);
-    while (transformedBytes < minFileSizeInBytes) {
-        const readeStream = fs.createReadStream(csvFileFullPath);
-        const writeStream = fs.createWriteStream(jsonFileFullPath, { flags: 'a' });
-        try {
-            // eslint-disable-next-line no-await-in-loop
-            await pipelineCsv(readeStream, writeStream, transformToBigCsv);
-            const headerLine = transformToBigCsv.getHeader();
-            transformedBytes += transformToBigCsv.transformedBytes;
-            transformToBigCsv = new TransformToBigCsv(false, headerLine);
-        } catch (err) {
-            console.error('Pipeline failed', err);
-        }
-    }
+    fs.writeFileSync(jsonFileFullPath, '');
+    const transformedBytes = await pipelineCsv(
+        fs.createReadStream(csvFileFullPath),
+        fs.createWriteStream(jsonFileFullPath, { flags: 'a' }),
+        new TransformToBigCsv(true)
+    );
     console.log(transformedBytes);
 };
 
