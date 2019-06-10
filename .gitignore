@@ -1,0 +1,5 @@
+node_modules
+.vscode/
+test.json
+tests/testBig.csv
+tests/test.csv

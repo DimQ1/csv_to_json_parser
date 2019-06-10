@@ -1,0 +1,30 @@
+{
+  "name": "csv_to_json_parser",
+  "version": "1.0.1",
+  "description": "learning project a converter csv file to css by transform",
+  "main": "main.js",
+  "dependencies": {
+    "events": "^3.0.0",
+    "googleapis": "^39.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.17.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "csvToJson": "node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DimQ1/csv_to_json_parser.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DimQ1/csv_to_json_parser/issues"
+  },
+  "homepage": "https://github.com/DimQ1/csv_to_json_parser#readme"
+}
